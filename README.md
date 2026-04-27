@@ -1,5 +1,7 @@
 # LLM VoxCPM2 Studio
 
+![page1.png](page1.png)
+![alt text](page2.png)
 一个本地启动的网页工具，用于把文本经过 LLM 分段后，交给 VoxCPM2 生成语音。
 
 它适合这样的使用方式：
