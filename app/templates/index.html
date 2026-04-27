@@ -1,0 +1,273 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>{{ app_name }}</title>
+  <link rel="stylesheet" href="/static/style.css" />
+</head>
+<body>
+  <div class="backdrop-orb orb-a"></div>
+  <div class="backdrop-orb orb-b"></div>
+
+  <main class="layout">
+    <section class="panel hero hero-strong">
+      <div class="hero-copy">
+        <p class="eyebrow">Local Voice Studio</p>
+        <h1>LLM VoxCPM2 Studio</h1>
+        <p class="lead">基于 llm 分段的 voxcom2 语音生成系统</p>
+        <div class="hero-tags">
+          <span>llm 分段</span>
+          <span>配置自定义</span>
+        </div>
+      </div>
+      <button id="openConfigBtn" class="icon-button btn-config" type="button" aria-label="打开设置">⚙</button>
+    </section>
+
+    <section class="grid-main">
+      <section class="panel feature-panel">
+        <div class="section-head">
+          <div class="section-head-main">
+            <h2>输入与设定</h2>
+            <p>从一句话开始，或先抽一张声音灵感卡片。</p>
+          </div>
+        </div>
+
+        <div class="inspiration-strip">
+          <button id="randomPresetBtn" class="btn-idea" type="button">随机灵感</button>
+          <div id="presetPreview" class="preset-preview">抽一张卡片，试试新的叙述方式。</div>
+        </div>
+
+        <div class="composer-card">
+          <label class="field">
+            <span class="field-title">输入文本</span>
+            <textarea id="sourceText" rows="10" placeholder="在这里输入准备送进语音生成的正文。"></textarea>
+          </label>
+
+          <div class="composer-divider"></div>
+
+          <label class="field field-last">
+            <span class="field-title">Control</span>
+            <textarea id="controlHint" rows="4" placeholder="补充节奏、气息、情绪或说话方式。"></textarea>
+          </label>
+
+          <p id="controlNote" class="hint control-note">启用参考音频和参考文字时，这里的 control 不会直接拼进 VoxCPM 正文。</p>
+        </div>
+
+        <div class="actions section-actions">
+          <button id="segmentBtn" class="btn-segment action-strong" type="button">开始分段</button>
+          <button id="generateDirectBtn" class="btn-direct action-strong" type="button">直接生成音频</button>
+        </div>
+      </section>
+
+      <section class="panel feature-panel side-panel">
+        <div class="section-head">
+          <div class="section-head-main">
+            <h2>参考配置</h2>
+            <p>可以选择现成音色，也可以上传你自己的参考材料。</p>
+          </div>
+        </div>
+
+        <label class="field">
+          <span class="field-title">系统 / 用户音色</span>
+          <select id="voiceSelect">
+            <option value="">不使用预设音色</option>
+          </select>
+        </label>
+
+        <div class="callout compact-callout">
+          选中音色时，会自动带上对应的参考音频与参考文字。
+        </div>
+
+        <div class="reference-card">
+          <div class="reference-card-head">
+            <div>
+              <h3>参考材料</h3>
+              <p id="referenceSummary" class="hint">也可以直接上传参考音频，并手动填写对应参考文字。</p>
+            </div>
+            <button id="referenceAudioPicker" class="btn-reference" type="button">选择参考音频</button>
+          </div>
+          <input id="referenceAudio" type="file" accept="audio/*" hidden />
+          <div id="referenceAudioName" class="file-name">未选择文件</div>
+          <div id="voiceAudioPreviewWrap" class="reference-audio-preview hidden">
+            <audio id="voiceAudioPreview" controls preload="none"></audio>
+          </div>
+          <div id="referenceTextBlock" class="reference-text-block">
+            <label class="field field-last">
+              <span class="field-title">参考文字</span>
+              <textarea id="referenceTextInput" rows="4" placeholder="上传参考音频时，请填写与这段音频对应的参考文字。"></textarea>
+            </label>
+          </div>
+        </div>
+
+        <div class="role-card role-card-bottom">
+          <div class="role-head">
+            <h3>角色设定</h3>
+            <div class="inline-actions">
+              <label class="upload-chip upload-chip-soft btn-upload" for="soulFile">上传 Markdown</label>
+              <input id="soulFile" type="file" accept=".md,text/markdown" hidden />
+            </div>
+          </div>
+          <textarea id="soulOverride" rows="5" placeholder="可留空，也可以直接粘贴角色背景、关系、表达风格。"></textarea>
+        </div>
+      </section>
+    </section>
+
+    <section class="grid-lower">
+      <section class="panel results-panel">
+        <div class="section-head">
+          <div class="section-head-main">
+            <h2>分段情况</h2>
+            <p>逐段查看情绪、control 与正文，再决定是否送去生成。</p>
+          </div>
+          <div class="section-tools">
+            <div id="segmentLoader" class="loader-chip hidden"><span class="spinner"></span> LLM 分段中</div>
+            <button id="clearSegmentsBtn" class="btn-danger small" type="button">清除当前分段</button>
+            <button id="editPromptBtn" class="btn-rule small" type="button">编辑分段规则</button>
+          </div>
+        </div>
+
+        <div id="segmentEmpty" class="empty-card">还没有分段结果。你可以先开始分段，或直接按当前文本生成。</div>
+
+        <div id="segmentViewer" class="segment-viewer hidden">
+          <div class="segment-pager">
+            <button id="prevSegmentBtn" class="btn-page small" type="button">上一段</button>
+            <div id="segmentPageInfo" class="page-indicator">第 1 段 / 共 1 段</div>
+            <button id="nextSegmentBtn" class="btn-page small" type="button">下一段</button>
+          </div>
+
+          <div class="segment-frame">
+            <label class="field">
+              <span class="field-title">情绪</span>
+              <input id="segmentEmotion" />
+            </label>
+            <label class="field">
+              <span class="field-title">Control</span>
+              <textarea id="segmentControl" rows="4"></textarea>
+            </label>
+            <p class="hint control-note">启用参考音频和参考文字时，这里的 control 不会直接拼进 VoxCPM 正文。</p>
+            <label class="field field-last">
+              <span class="field-title">文本</span>
+              <textarea id="segmentText" rows="7"></textarea>
+            </label>
+          </div>
+
+          <div class="actions section-actions">
+            <button id="generateBtn" class="btn-audio action-strong" type="button">按当前分段生成音频</button>
+          </div>
+        </div>
+      </section>
+
+      <section class="panel player-panel">
+        <div class="section-head">
+          <div>
+            <h2>音频生成</h2>
+            <p>先试听，再决定是否保存，或沉淀为新的音色。</p>
+          </div>
+          <div id="audioLoader" class="loader-chip hidden"><span class="spinner"></span> 音频生成中</div>
+        </div>
+        <div id="audioEmpty" class="audio-shell empty-shell">
+          <div class="audio-placeholder">
+            <div class="audio-glyph"></div>
+            <div>
+              <h3>等待一段声音落下</h3>
+              <p>生成完成后，这里会出现 WAV 试听播放器。</p>
+            </div>
+          </div>
+        </div>
+        <div id="audioReady" class="audio-shell hidden">
+          <audio id="player" controls preload="none"></audio>
+        </div>
+        <div class="actions section-actions">
+          <button id="saveAudioBtn" class="btn-save" type="button">保存音频到本地</button>
+          <button id="saveVoiceBtn" class="btn-voice" type="button">保存为新音色</button>
+        </div>
+        <div id="savedAudioPath" class="hint"></div>
+      </section>
+    </section>
+  </main>
+
+  <dialog id="configDialog" class="config-dialog">
+    <form method="dialog" class="config-form">
+      <div class="dialog-head">
+        <div>
+          <h2>设置</h2>
+        </div>
+        <button id="cancelConfigBtn" class="btn-page small" type="button">取消</button>
+      </div>
+
+      <div class="grid-two">
+        <div class="config-card">
+          <label class="field">
+            <span class="field-title">LLM Provider</span>
+            <select id="llmProvider"></select>
+          </label>
+          <label class="field">
+            <span class="field-title">Base URL</span>
+            <input id="llmBaseUrl" placeholder="https://api.openai.com/v1" />
+          </label>
+          <label class="field">
+            <span class="field-title">API Key</span>
+            <input id="llmApiKey" placeholder="sk-..." />
+          </label>
+          <label class="field">
+            <span class="field-title">Model</span>
+            <input id="llmModel" placeholder="留空时自动尝试获取可用模型" />
+          </label>
+        </div>
+
+        <div class="config-card">
+          <label class="field">
+            <span class="field-title">TTS Adapter</span>
+            <select id="ttsAdapter"></select>
+          </label>
+          <label class="field">
+            <span class="field-title">VoxCPM Model Path / Repo</span>
+            <input id="ttsModelPath" placeholder="openbmb/VoxCPM2 或 E:\\models\\VoxCPM2" />
+            <div class="inline-path-tools">
+              <button id="pickModelFolderBtn" class="btn-page small" type="button">选择本地模型文件夹</button>
+              <button id="downloadModelBtn" class="btn-direct small" type="button">下载 HF 模型到当前文件夹</button>
+            </div>
+            <p id="ttsModelPathHint" class="hint path-hint">可以填写 Hugging Face 仓库名，或本地模型目录。</p>
+          </label>
+          <label class="field">
+            <span class="field-title">默认 CFG（无 LLM 时使用，控制跟随力度）</span>
+            <input id="ttsCfg" type="number" step="0.05" />
+          </label>
+          <label class="field">
+            <span class="field-title">默认 Steps（无 LLM 时使用，控制推理步数）</span>
+            <input id="ttsSteps" type="number" step="1" />
+          </label>
+        </div>
+      </div>
+
+      <div class="actions">
+        <button id="saveConfigBtn" class="btn-config action-strong" type="button">保存并退出</button>
+      </div>
+    </form>
+  </dialog>
+
+  <dialog id="promptDialog" class="config-dialog prompt-dialog">
+    <form method="dialog" class="config-form">
+      <div class="dialog-head">
+        <div>
+          <h2>编辑分段规则</h2>
+          <p class="hint">这里只放文本切分逻辑，底层请求格式会在运行时自动拼装。</p>
+        </div>
+        <button id="cancelPromptBtn" class="btn-page small" type="button">关闭</button>
+      </div>
+      <label class="field">
+        <span class="field-title">分段规则</span>
+        <textarea id="promptEditor" rows="18" class="prompt-editor"></textarea>
+      </label>
+      <div class="actions">
+        <button id="savePromptBtn" class="btn-rule action-strong" type="button">保存分段规则</button>
+      </div>
+    </form>
+  </dialog>
+
+  <div id="statusToast" class="status-toast"></div>
+
+  <script src="/static/app.js"></script>
+</body>
+</html>

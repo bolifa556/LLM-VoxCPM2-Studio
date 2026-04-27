@@ -1,0 +1,36 @@
+{
+  "server": {
+    "host": "0.0.0.0",
+    "port": 7860
+  },
+  "llm": {
+    "active_provider": "openai",
+    "providers": {
+      "openai": {
+        "provider_type": "openai_compatible",
+        "enabled": true,
+        "base_url": "http://211.86.151.186:8000/v1",
+        "api_key": "smrllm",
+        "model": "",
+        "timeout_seconds": 60.0
+      }
+    }
+  },
+  "tts": {
+    "active_adapter": "voxcpm_local",
+    "adapters": {
+      "voxcpm_local": {
+        "adapter_type": "voxcpm_local",
+        "enabled": true,
+        "model_path": "E:/models/voxcpm2",
+        "download_dir": "",
+        "device": "auto",
+        "default_cfg_value": 1.45,
+        "default_inference_timesteps": 8,
+        "normalize": true,
+        "load_denoiser": false,
+        "output_dir": "data/output"
+      }
+    }
+  }
+}
