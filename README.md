@@ -1,15 +1,13 @@
-
-![page1.png](page1.png)
-![alt text](page2.png)
 # LLM VoxCPM2 Studio
+
 一个本地启动的网页工具，用于把文本经过 LLM 分段后，交给 VoxCPM2 生成语音。
 
-它适合这样的使用方式：
+它适合这样的工作流：
 
-- 输入一段正文
-- 让 LLM 生成更适合 TTS 的分段结果
-- 结合参考音频、参考文字或现成音色进行语音生成
-- 在网页中试听、调整并保存结果
+- 输入正文
+- 让 LLM 生成适合 TTS 的分段结果
+- 结合参考音频、参考文字或现成音色进行生成
+- 在网页中试听、修改并保存结果
 
 项目入口：
 
@@ -23,42 +21,74 @@
 ## 功能概览
 
 - 本地网页界面
-- LLM 分段与可编辑分段结果
+- LLM 分段与分段结果编辑
 - VoxCPM2 本地生成
 - 参考音频 + 参考文字模式
 - 系统音色 / 用户音色管理
-- 音频网页试听与手动保存
+- 网页试听与手动保存
 
 ## 安装
 
-依赖分为两部分：
+依赖分为三部分：
 
-- 本应用自己的 Web / API 依赖
-- 本地运行 VoxCPM2 所需依赖
+- 应用自己的 Python 依赖
+- VoxCPM2 本地依赖
+- `ffmpeg`
 
-建议先进入你的 Python 环境，再按下面顺序安装。
+### 方式一：推荐使用 conda 环境文件
 
-### 1. 安装应用依赖
+项目提供了 `environment.yml`，可以一次创建环境并安装：
+
+- Python
+- `ffmpeg`
+- `requirements-app.txt`
+- `requirements-voxcpm-local.txt`
+
+创建环境：
+
+```bash
+conda env create -f environment.yml
+```
+
+激活环境：
+
+```bash
+conda activate agentwork
+```
+
+### 方式二：手动安装
+
+先安装应用依赖：
 
 ```bash
 pip install -r requirements-app.txt
 ```
 
-这部分用于启动网页界面和后端接口。
-
-### 2. 安装 VoxCPM2 本地依赖
+再安装 VoxCPM2 本地依赖：
 
 ```bash
 pip install -r requirements-voxcpm-local.txt
 ```
 
-这部分用于本地语音生成。当前依赖文件按 CUDA 版 PyTorch 组织，适合有 NVIDIA GPU 的环境。
-
-如果你暂时只想查看界面，而不运行本地 TTS，可以先只安装：
+最后安装 `ffmpeg`：
 
 ```bash
-pip install -r requirements-app.txt
+conda install -n <your_env> -c conda-forge ffmpeg -y
 ```
+
+例如：
+
+```bash
+conda install -n agentwork -c conda-forge ffmpeg -y
+```
+
+安装后请确认：
+
+```bash
+ffmpeg -version
+```
+
+如果 `ffmpeg` 不可用，带参考音频的生成请求会失败。
 
 ## 模型准备
 
@@ -236,3 +266,11 @@ voice/<scope>/<voice_id>/
 ### 3. 何时更适合不用参考
 
 如果你更想测试文本控制、情绪变化或随机声音，建议先不带参考，直接生成。
+
+## Git 忽略
+
+默认不建议提交以下目录：
+
+- `data/`
+- `voice/usr/`
+- `notes/`

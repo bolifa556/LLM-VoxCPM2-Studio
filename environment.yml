@@ -1,0 +1,10 @@
+name: agentwork
+channels:
+  - conda-forge
+dependencies:
+  - python=3.11
+  - ffmpeg
+  - pip
+  - pip:
+      - -r requirements-app.txt
+      - -r requirements-voxcpm-local.txt

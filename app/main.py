@@ -48,6 +48,50 @@ def _resolve_request_config(config_override: dict | None) -> AppConfig:
     return merge_config_override(load_config(), config_override)
 
 
+def _normalize_reference_audio(source_path: Path, temp_files: list[Path]) -> Path:
+    normalized_path = Path(tempfile.gettempdir()) / f"voxcpm_ref_norm_{uuid.uuid4().hex}.wav"
+    command = [
+        "ffmpeg",
+        "-y",
+        "-i",
+        str(source_path),
+        "-vn",
+        "-ac",
+        "1",
+        "-ar",
+        "16000",
+        "-c:a",
+        "pcm_s16le",
+        str(normalized_path),
+    ]
+    try:
+        result = subprocess.run(
+            command,
+            capture_output=True,
+            text=True,
+            encoding="utf-8",
+            timeout=120,
+            check=False,
+        )
+    except FileNotFoundError as exc:
+        raise HTTPException(
+            status_code=500,
+            detail="Reference audio normalization requires ffmpeg. Please install ffmpeg and try again.",
+        ) from exc
+    except Exception as exc:
+        raise HTTPException(status_code=500, detail="Failed to normalize reference audio.") from exc
+
+    if result.returncode != 0 or not normalized_path.exists():
+        stderr = (result.stderr or "").strip()
+        raise HTTPException(
+            status_code=400,
+            detail=f"Failed to decode reference audio. Please try a clean WAV or MP3 file. {stderr}".strip(),
+        )
+
+    temp_files.append(normalized_path)
+    return normalized_path
+
+
 def _resolve_reference_assets(req: GenerateRequest):
     temp_files: list[Path] = []
     reference_audio_path: Path | None = None
@@ -66,6 +110,9 @@ def _resolve_reference_assets(req: GenerateRequest):
         temp_path.write_bytes(data)
         temp_files.append(temp_path)
         reference_audio_path = temp_path
+
+    if reference_audio_path:
+        reference_audio_path = _normalize_reference_audio(reference_audio_path, temp_files)
 
     return chosen_voice, reference_audio_path, reference_text, temp_files
 
